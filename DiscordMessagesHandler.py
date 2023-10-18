@@ -32,3 +32,10 @@ class DiscordMessagesHandler:
         issueIdOrKey = message.content.split()[1]
         issue = await self.jiraAPI.getIssue(issueIdOrKey)
         print(issue)
+        
+    async def listProjects(self, commandInfo, message):
+        projects = await self.jiraAPI.get_projects()
+        print(projects)
+        await message.channel.send(f"Olá {message.author.mention}!")
+        for project in projects:
+            await message.channel.send(f"Projeto: {project['name']}")

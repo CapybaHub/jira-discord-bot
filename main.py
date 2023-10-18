@@ -1,6 +1,7 @@
 import discord
 from DiscordMessagesHandler import DiscordMessagesHandler
-from JiraManager import JiraAPIManager
+import JiraManager
+import traceback
 from settings import (
     DISCORD_API_TOKEN,
     JIRA_API_TOKEN,
@@ -10,7 +11,7 @@ from settings import (
     getAvailableCommands,
 )
 
-jiraAPI = JiraAPIManager(JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN)
+jiraAPI = JiraManager.Client(JIRA_API_TOKEN, JIRA_PROJECT_URL, JIRA_USER_EMAIL)
 
 client = discord.Client(intents=discord.Intents.all())
 
@@ -28,12 +29,14 @@ async def on_ready():
 async def on_message(message):
     if message.author == client.user:
         return
-
+    
     try:
         await handleReceivedMessage(message)
     except Exception as e:
         print(e)
+        traceback.print_exc()
         await message.channel.send("Ocorreu um erro ao executar o comando.")
+
 
 async def handleReceivedMessage(message):
     messageContent = message.content.split()
@@ -51,7 +54,7 @@ async def handleReceivedMessage(message):
                 print("Comando encontrado:", command)
                 print("Available", availableCommands[command])
                 print("Message", messageContent)
-                
+
                 return await availableCommands[command]["function"](
                     availableCommands[command], message
                 )
