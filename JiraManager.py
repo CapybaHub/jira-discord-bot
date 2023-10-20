@@ -1,9 +1,7 @@
 from urllib.parse import urljoin
 from requests.auth import HTTPBasicAuth
 import requests
-
-import settings
-
+import json
 
 class Client:
     """
@@ -24,15 +22,13 @@ class Client:
     def _request(self, method, suffix, **kwargs):
         response = requests.request(
             method,
-            urljoin(f"{settings.JIRA_PROJECT_URL}/rest/api/3/", suffix),
+            urljoin(f"{self.project_url}/rest/api/3/", suffix),
             auth=HTTPBasicAuth(self.user, self.api_token),
-            headers={
-                "Content-Type": "application/json",
-                "Host": settings.JIRA_PROJECT_URL,
-                # 'Cookie': 'atlassian.xsrf.token=59ca786c-b3cf-4ad7-9cef-935a0164ea36_1060ff4bb3fe8ced9162435c2ff05ed1e6e40b4e_lin',
-                "Cache-Control": "no-cache",
+            headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
             },
-            **kwargs,
+            **kwargs
         )
         self._handle_api_error(response)
         return response
@@ -54,7 +50,7 @@ class Client:
             f"project/search",
             params=params,
         )
-        print(response)
+        print(json.dumps(json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")))
         return response
 
     def get_tasks(self, project):
@@ -64,6 +60,7 @@ class Client:
             f"project/{project}",
             params={"include-tasks": "true"},
         )
+        print(json.dumps(json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")))
         return response
 
     def get_task_by_key(self, issueKey):
