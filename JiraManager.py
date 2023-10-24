@@ -50,8 +50,7 @@ class Client:
             f"project/search",
             params=params,
         )
-        print(json.dumps(json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")))
-        return response
+        return response.json()
 
     def get_tasks(self, project):
         """Listar todas as tasks de um projeto."""
@@ -60,8 +59,7 @@ class Client:
             f"project/{project}",
             params={"include-tasks": "true"},
         )
-        print(json.dumps(json.loads(response.text), sort_keys=True, indent=4, separators=(",", ": ")))
-        return response
+        return response.json()
 
     def get_task_by_key(self, issueKey):
         """Listar uma task."""
@@ -69,7 +67,7 @@ class Client:
             "GET",
             f"issue/{issueKey}",
         )
-        return response
+        return response.json()
 
     def get_tasks_by_sprint(self, project_key, sprint_id):
         """Listar todas as tasks de uma sprint"""
@@ -84,4 +82,4 @@ class Client:
             f"search",
             params=query,
         )
-        return response
+        return response.json()

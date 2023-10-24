@@ -11,7 +11,7 @@ build:
 	docker build -t jira-discord-bot . 
 
 up:
-	docker run -d --name jira-discord-bot jira-discord-bot
+	docker run jira-discord-bot 
 
 enter:
 	docker-compose exec $(ARG) bash

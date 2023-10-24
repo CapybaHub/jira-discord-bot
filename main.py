@@ -61,5 +61,5 @@ async def handleReceivedMessage(message):
                     availableCommands[command], message
                 )
 
-
+print("Starting...")
 client.run(DISCORD_API_TOKEN)
