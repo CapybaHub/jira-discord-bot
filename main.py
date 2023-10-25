@@ -11,7 +11,7 @@ from settings import (
     getAvailableCommands,
 )
 
-jiraAPI = JiraManager.Client(JIRA_API_TOKEN, JIRA_PROJECT_URL, JIRA_USER_EMAIL)
+jiraAPI = JiraManager.Client(JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN)
 
 client = discord.Client(intents=discord.Intents.all())
 
@@ -22,6 +22,8 @@ availableCommands = getAvailableCommands(MessagesHandler)
 
 @client.event
 async def on_ready():
+    jiraAPI.get_projects()
+
     print(f"Logado com sucesso como {client.user}")
 
 
@@ -59,5 +61,5 @@ async def handleReceivedMessage(message):
                     availableCommands[command], message
                 )
 
-
+print("Starting...")
 client.run(DISCORD_API_TOKEN)

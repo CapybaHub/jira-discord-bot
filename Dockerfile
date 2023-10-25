@@ -1,11 +1,11 @@
-FROM python
-
-WORKDIR /app
+FROM python:3.11
 
 COPY . /app
 
-RUN pip install -r requirements.txt
+WORKDIR /app
+
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 EXPOSE 5000
 
-CMD ["python3", "app.py"]
+CMD ["python3", "main.py"]
