@@ -33,4 +33,16 @@ def getAvailableCommands(MessageHandler):
             "example": "!projects",
             "function": MessageHandler.listProjects,
         },
+        "tasks": {
+            "description": "Lista as tasks de um projeto",
+            "params": ["projectKey"],
+            "example": "!tasks PROJ",
+            "function": MessageHandler.listTasks,
+        },
+        "sprints": {
+            "description": "Lista as tasks de um projeto",
+            "params": ["projectID"],
+            "example": "!sprints 2",
+            "function": MessageHandler.listSprints,
+        },
     }

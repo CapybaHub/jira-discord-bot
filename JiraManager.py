@@ -18,6 +18,20 @@ class Client:
         self.user = JIRA_USER_EMAIL
         self.api_token = JIRA_API_TOKEN
         self.project_url = JIRA_PROJECT_URL
+        
+    def _requestToAgile(self, method, suffix, **kwargs):
+        response = requests.request(
+            method,
+            urljoin(f"{self.project_url}/rest/agile/1.0/", suffix),
+            auth=HTTPBasicAuth(self.user, self.api_token),
+            headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            **kwargs
+        )
+        self._handle_api_error(response)
+        return response
 
     def _request(self, method, suffix, **kwargs):
         response = requests.request(
@@ -80,6 +94,69 @@ class Client:
         response = self._request(
             "GET",
             f"search",
+            params=query,
+        )
+        return response.json()
+    
+    def get_sprints(self, project_key):
+        """Listar todas as sprints de um projeto."""
+        response = self._request(
+            "GET",
+            f"sprint/{project_key}",
+        )
+        return response.json()
+    
+    def get_sprint_list(self, boardId):
+        """Listar todas sprints."""
+        response = self._requestToAgile(
+            "GET",
+            f"board/{boardId}/sprint",
+        )
+        return response.json()
+    
+    def get_project_list(self, boardId):
+        """Listar todos projetos."""
+        response = self._requestToAgile(
+            "GET",
+            f"board/{boardId}/project",
+        )
+        return response.json()
+    
+    def get_board_list(self):
+        """Listar todos projetos."""
+        response = self._requestToAgile(
+            "GET",
+            f"board",
+        )
+        return response.json()
+        
+
+    def get_sprint_data(self, sprint_id):
+        """Obter dados de uma sprint."""
+        response = self._request(
+            "GET",
+            f"sprint/{sprint_id}",
+        )
+        return response.json()
+
+    def get_sprint_burndown(self, sprint_id):
+        """Obter o relatório de burndown de uma sprint."""
+        response = self._request(
+            "GET",
+            f"sprint/{sprint_id}/burndownData",
+        )
+        return response.json()
+
+    def get_tasks_in_sprint(self, sprint_id):
+        """Listar todas as tasks de uma sprint."""
+        query = {
+            "jql": f"sprint = {sprint_id}",
+            "fields": "summary,customfield_10026",
+        }
+
+        response = self._request(
+            "GET",
+            "search",
             params=query,
         )
         return response.json()

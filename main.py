@@ -1,7 +1,7 @@
 import discord
 from DiscordMessagesHandler import DiscordMessagesHandler
-import JiraManager
 import traceback
+import JiraManager
 from settings import (
     DISCORD_API_TOKEN,
     JIRA_API_TOKEN,

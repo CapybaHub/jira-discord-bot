@@ -43,7 +43,7 @@ class DiscordMessagesHandler:
 
     async def listProjects(self, commandInfo, message):
         projects = self.jiraAPI.get_projects()
-        
+
         projectsData = {}
 
         for project in projects["values"]:
@@ -75,6 +75,7 @@ class DiscordMessagesHandler:
                 value="Privado" if projectsData[project]["isPrivate"] else "Público",
                 inline=True,
             )
+            projectEmbed.add_field(name="ID", value=projectsData[project]["id"])
 
             projectsData[project]["embed"] = projectEmbed
 
@@ -85,4 +86,27 @@ class DiscordMessagesHandler:
         await message.reply(
             embeds=showEmbeds,
             content=f"**É claro, aqui estão seus projetos:** \n\n*Contagem de projetos: {len(projectsData)}* \n \n",
+        )
+
+    async def listTasks(self, commandInfo, message):
+        print(commandInfo)
+        tasks = self.jiraAPI.get_tasks(commandInfo)
+        print(tasks)
+
+        tasksData = {}
+
+    async def listBoards(self, commandInfo, message):
+        print(commandInfo)
+        tasks = self.jiraAPI.get_board_list(commandInfo)
+        print(tasks)
+
+        tasksData = {}
+
+    async def listSprints(self, commandInfo, message):
+        print(commandInfo)
+        sprints = self.jiraAPI.get_sprint_list(commandInfo)
+        print(sprints)
+
+        await message.reply(
+            content=f"**É claro, aqui estão suas sprints:** \n\n*Contagem de sprints: {len(sprints)}* \n \n",
         )
