@@ -6,6 +6,6 @@ WORKDIR /app
 
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-EXPOSE 5000
+EXPOSE 80
 
 CMD ["python3", "main.py"]

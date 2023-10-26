@@ -20,11 +20,22 @@ MessagesHandler = DiscordMessagesHandler(jiraAPI=jiraAPI, discordClient=client)
 availableCommands = getAvailableCommands(MessagesHandler)
 
 
+from simple_http_server import route, server
+    
+
+@route("/")
+def index():
+    return {"status": "201"}
+
+
 @client.event
 async def on_ready():
     jiraAPI.get_projects()
 
     print(f"Logado com sucesso como {client.user}")
+
+    print('SERVER START')
+    server.start(port=80)
 
 
 @client.event
