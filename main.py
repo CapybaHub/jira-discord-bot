@@ -19,6 +19,13 @@ MessagesHandler = DiscordMessagesHandler(jiraAPI=jiraAPI, discordClient=client)
 
 availableCommands = getAvailableCommands(MessagesHandler)
 
+from simple_http_server import route, server
+    
+
+@route("/")
+def index():
+    return {"status": "201"}
+
 
 from simple_http_server import route, server
     
