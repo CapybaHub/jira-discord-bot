@@ -18,3 +18,6 @@ down:
 
 enter:
 	docker-compose exec $(ARG) bash
+
+test-jira:
+	bash scripts/instance-jira-client.sh

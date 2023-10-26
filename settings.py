@@ -1,5 +1,7 @@
 from dotenv import load_dotenv
 
+from DiscordMessagesHandler import DiscordMessagesHandler
+
 # Load .env file
 load_dotenv()
 
@@ -12,9 +14,8 @@ DISCORD_API_TOKEN = str(os.getenv("DISCORD_API_TOKEN"))
 
 commandPrefixes = ["!"]
 
-
-def getAvailableCommands(MessageHandler):
-    return {
+def getAvailableCommands(MessageHandler: DiscordMessagesHandler):
+    base_commands = {
         "oi": {
             "description": "Saudação",
             "params": [],
@@ -27,22 +28,48 @@ def getAvailableCommands(MessageHandler):
             "example": "!issue PROJ-123",
             "function": MessageHandler.getIssueInfo,
         },
-        "projects": {
-            "description": "Lista os projetos da conta",
+        "boards": {
+            "description": "Lista os quadros da conta",
             "params": [],
             "example": "!projects",
-            "function": MessageHandler.listProjects,
+            "function": MessageHandler.listBoards,
+            "aliases": ["projects", "quadros"],
         },
-        "tasks": {
-            "description": "Lista as tasks de um projeto",
-            "params": ["projectKey"],
-            "example": "!tasks PROJ",
-            "function": MessageHandler.listTasks,
-        },
+        # "tasks": {
+        #     "description": "Lista as tasks de um projeto",
+        #     "params": ["projectKey"],
+        #     "example": "!tasks PROJ",
+        #     "function": MessageHandler.listTasks,
+        # },
         "sprints": {
-            "description": "Lista as tasks de um projeto",
-            "params": ["projectID"],
+            "description": "Lista as sprints de um projeto",
+            "params": ["id-do-quadro"],
             "example": "!sprints 2",
             "function": MessageHandler.listSprints,
         },
+        "current-sprint": {
+            "description": "Busca informações da sprint atual de um projeto",
+            "params": ["id-do-quadro"],
+            "example": "!current-sprint 2",
+            "function": MessageHandler.getCurrentSprintInfo,
+            "aliases": ["sprint-atual", 'sa'],
+        },
+        "sprint-report": {
+            "description": "Busca informações de uma sprint",
+            "params": ["id-da-sprint"],
+            "example": "!sprint 2",
+            "function": MessageHandler.getSprintReport,
+            "aliases": ["sprint", 'sr'],
+        },
     }
+    
+    commands_with_aliases = {}
+    
+    for command in base_commands:
+        commands_with_aliases[command] = base_commands[command]
+        
+        if "aliases" in base_commands[command]:
+            for alias in base_commands[command]["aliases"]:
+                commands_with_aliases[alias] = base_commands[command]
+
+    return  commands_with_aliases

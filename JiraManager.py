@@ -3,7 +3,7 @@ from requests.auth import HTTPBasicAuth
 import requests
 import json
 
-class Client:
+class JiraAPIClient:
     """
     Integration with JIRA WebService.
 
@@ -65,46 +65,6 @@ class Client:
             params=params,
         )
         return response.json()
-
-    def get_tasks(self, project):
-        """Listar todas as tasks de um projeto."""
-        response = self._request(
-            "GET",
-            f"project/{project}",
-            params={"include-tasks": "true"},
-        )
-        return response.json()
-
-    def get_task_by_key(self, issueKey):
-        """Listar uma task."""
-        response = self._request(
-            "GET",
-            f"issue/{issueKey}",
-        )
-        return response.json()
-
-    def get_tasks_by_sprint(self, project_key, sprint_id):
-        """Listar todas as tasks de uma sprint"""
-
-        query = {
-            "jql": f"project = {project_key} AND sprint = {sprint_id}",
-            "fields": "summary,customfield_10026",
-        }
-
-        response = self._request(
-            "GET",
-            f"search",
-            params=query,
-        )
-        return response.json()
-    
-    def get_sprints(self, project_key):
-        """Listar todas as sprints de um projeto."""
-        response = self._request(
-            "GET",
-            f"sprint/{project_key}",
-        )
-        return response.json()
     
     def get_sprint_list(self, boardId):
         """Listar todas sprints."""
@@ -130,10 +90,9 @@ class Client:
         )
         return response.json()
         
-
     def get_sprint_data(self, sprint_id):
         """Obter dados de uma sprint."""
-        response = self._request(
+        response = self._requestToAgile(
             "GET",
             f"sprint/{sprint_id}",
         )
@@ -141,7 +100,7 @@ class Client:
 
     def get_sprint_burndown(self, sprint_id):
         """Obter o relatório de burndown de uma sprint."""
-        response = self._request(
+        response = self._requestToAgile(
             "GET",
             f"sprint/{sprint_id}/burndownData",
         )
@@ -149,14 +108,8 @@ class Client:
 
     def get_tasks_in_sprint(self, sprint_id):
         """Listar todas as tasks de uma sprint."""
-        query = {
-            "jql": f"sprint = {sprint_id}",
-            "fields": "summary,customfield_10026",
-        }
-
-        response = self._request(
+        response = self._requestToAgile(
             "GET",
-            "search",
-            params=query,
+            f"sprint/{sprint_id}/issue",
         )
         return response.json()
