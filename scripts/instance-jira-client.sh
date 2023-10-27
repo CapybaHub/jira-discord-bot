@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-bash scripts/setup-venv.sh
+source venv/bin/activate
 
 python -c "
 import JiraManager

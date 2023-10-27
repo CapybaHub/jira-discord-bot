@@ -3,6 +3,9 @@ from requests.auth import HTTPBasicAuth
 import requests
 import json
 
+from JiraClasses import IssuesList, Sprint
+
+
 class JiraAPIClient:
     """
     Integration with JIRA WebService.
@@ -18,17 +21,17 @@ class JiraAPIClient:
         self.user = JIRA_USER_EMAIL
         self.api_token = JIRA_API_TOKEN
         self.project_url = JIRA_PROJECT_URL
-        
+
     def _requestToAgile(self, method, suffix, **kwargs):
         response = requests.request(
             method,
             urljoin(f"{self.project_url}/rest/agile/1.0/", suffix),
             auth=HTTPBasicAuth(self.user, self.api_token),
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
             },
-            **kwargs
+            **kwargs,
         )
         self._handle_api_error(response)
         return response
@@ -38,11 +41,11 @@ class JiraAPIClient:
             method,
             urljoin(f"{self.project_url}/rest/api/3/", suffix),
             auth=HTTPBasicAuth(self.user, self.api_token),
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
             },
-            **kwargs
+            **kwargs,
         )
         self._handle_api_error(response)
         return response
@@ -65,7 +68,7 @@ class JiraAPIClient:
             params=params,
         )
         return response.json()
-    
+
     def get_sprint_list(self, boardId):
         """Listar todas sprints."""
         response = self._requestToAgile(
@@ -73,7 +76,7 @@ class JiraAPIClient:
             f"board/{boardId}/sprint",
         )
         return response.json()
-    
+
     def get_project_list(self, boardId):
         """Listar todos projetos."""
         response = self._requestToAgile(
@@ -81,7 +84,7 @@ class JiraAPIClient:
             f"board/{boardId}/project",
         )
         return response.json()
-    
+
     def get_board_list(self):
         """Listar todos projetos."""
         response = self._requestToAgile(
@@ -89,14 +92,15 @@ class JiraAPIClient:
             f"board",
         )
         return response.json()
-        
+
     def get_sprint_data(self, sprint_id):
         """Obter dados de uma sprint."""
         response = self._requestToAgile(
             "GET",
             f"sprint/{sprint_id}",
         )
-        return response.json()
+        sprint = Sprint(response.json())
+        return sprint
 
     def get_sprint_burndown(self, sprint_id):
         """Obter o relatório de burndown de uma sprint."""
@@ -112,4 +116,15 @@ class JiraAPIClient:
             "GET",
             f"sprint/{sprint_id}/issue",
         )
-        return response.json()
+
+        data = response.json()
+
+        # Create an Issue instance
+        issues = IssuesList(
+            startAt=data["startAt"],
+            maxResults=data["maxResults"],
+            total=data["total"],
+            issues=data["issues"],
+        )
+
+        return issues

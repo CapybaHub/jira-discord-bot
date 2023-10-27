@@ -1,20 +1,24 @@
 import json
 import discord
+from JiraClasses import Sprint
 from JiraManager import JiraAPIClient
 from datetime import datetime
 
-from utils import generateRandomDiscordColor, getProjectUrlFromKey
+from utils import (
+    generateRandomDiscordColor,
+    getFormattedDateAndTimeFromISO,
+    getFormattedDateFromDatetime,
+    getProjectUrlFromKey,
+)
 
 
 async def validateReceivedParamsFromMessage(commandInfo, message):
-    print(
-        "validateReceivedParamsFromMessage",
-        message.content,
-        len(message.content.split()),
-        len(commandInfo["params"]) + 1,
-    )
     if len(message.content.split()) != len(commandInfo["params"]) + 1:
-        errorMessage = f"Parâmetros inválidos.\nOs parâmetros esperados são: \n" + "\n".join([f"- {command}" for command in commandInfo['params']]) + f"\nExemplo: {commandInfo['example']}"
+        errorMessage = (
+            f"Parâmetros inválidos.\nOs parâmetros esperados são: \n"
+            + "\n".join([f"- {command}" for command in commandInfo["params"]])
+            + f"\nExemplo: {commandInfo['example']}"
+        )
         await message.channel.send(errorMessage)
 
         return Exception(errorMessage)
@@ -37,24 +41,6 @@ async def getParamsFromValidMessage(commandInfo, message):
     return paramsByName
 
 
-def getDatetimeFromIsoFormatWithZ(isoFormat):
-    return datetime.fromisoformat(isoFormat.replace("Z", "+00:00"))
-
-
-def getFormattedDate(date):
-    return getDatetimeFromIsoFormatWithZ(date).strftime("%d/%m/%Y %H:%M:%S")
-
-
-class View(
-    discord.ui.View
-):  # Create a class called MyView that subclasses discord.ui.View
-    @discord.ui.button(
-        label="Click me!", style=discord.ButtonStyle.primary, emoji="😎"
-    )  # Create a button with the label "😎 Click me!" with color Blurple
-    async def button_callback(self, button, interaction):
-        await interaction.response.send_message("You clicked the button")
-
-
 class DiscordMessagesHandler:
     jiraAPI = None
     discordClient = None
@@ -68,13 +54,12 @@ class DiscordMessagesHandler:
 
         currentSprint = None
         for sprint in all_sprints["values"]:
-            print(sprint)
             if sprint["state"] == "active":
                 currentSprint = sprint
                 break
 
         if currentSprint:
-            return currentSprint
+            return Sprint(currentSprint)
         else:
             return None
 
@@ -100,27 +85,24 @@ class DiscordMessagesHandler:
     async def getCurrentSprintInfo(self, commandInfo, message: discord.Message):
         params = await getParamsFromValidMessage(commandInfo, message)
 
-        print(params.items(), params['id-do-quadro'])
         current_sprint = await self._getCurrentSprint(int(params["id-do-quadro"]))
 
-        print("current_sprint", current_sprint)
-
         sprintInfoEmbed = discord.Embed(
-            title=f'{current_sprint["name"]}',
+            title=f"{current_sprint.name}",
             color=generateRandomDiscordColor(),
         )
 
         sprintInfoEmbed.add_field(
-            name="ID da sprint", value=current_sprint["id"], inline=False
+            name="ID da sprint", value=current_sprint.id, inline=False
         )
         sprintInfoEmbed.add_field(
             name="Data de início da sprint",
-            value=getFormattedDate(current_sprint["startDate"]).split()[0],
+            value=getFormattedDateFromDatetime(current_sprint.startDate),
             inline=False,
         )
         sprintInfoEmbed.add_field(
             name="Data de término da sprint",
-            value=getFormattedDate(current_sprint["endDate"]).split()[0],
+            value=getFormattedDateFromDatetime(current_sprint.endDate),
             inline=False,
         )
 
@@ -182,7 +164,6 @@ class DiscordMessagesHandler:
         params = await getParamsFromValidMessage(commandInfo, message)
 
         sprints = self.jiraAPI.get_sprint_list(params["id-do-quadro"])
-        print(sprints)
 
         sprintEmbeds = []
 
@@ -198,12 +179,12 @@ class DiscordMessagesHandler:
             sprintEmbed.add_field(name="ID da sprint", value=sprint["id"], inline=False)
             sprintEmbed.add_field(
                 name="Data de início da sprint",
-                value=getFormattedDate(sprint["startDate"]).split()[0],
+                value=getFormattedDateAndTimeFromISO(sprint["startDate"]).split()[0],
                 inline=False,
             )
             sprintEmbed.add_field(
                 name="Data de término da sprint",
-                value=getFormattedDate(sprint["endDate"]).split()[0],
+                value=getFormattedDateAndTimeFromISO(sprint["endDate"]).split()[0],
                 inline=False,
             )
 
@@ -218,28 +199,58 @@ class DiscordMessagesHandler:
         params = await getParamsFromValidMessage(commandInfo, message)
 
         sprint = self.jiraAPI.get_sprint_data(params["id-da-sprint"])
-        
+
         sprint_tasks = self.jiraAPI.get_tasks_in_sprint(params["id-da-sprint"])
-        print(sprint, sprint_tasks)
         # sprint_burndown = self.jiraAPI.get_sprint_burndown(params["id-da-sprint"])
 
         # print(sprint_burndown)
 
+        tasks_per_category = {}
+
+        for task in sprint_tasks.issues:
+            current_task_category = task.getCurrentStatus()
+            if current_task_category not in tasks_per_category:
+                tasks_per_category[current_task_category] = []
+            tasks_per_category[current_task_category].append(task)
+
+        conclusionPercentage = round(
+            len(tasks_per_category["Concluído"]) / len(sprint_tasks.issues) * 100,
+            2,
+        )
+
         sprintEmbed = discord.Embed(
-            title=f'{sprint["name"]}',
+            title=sprint.name,
             color=generateRandomDiscordColor(),
         )
 
-        sprintEmbed.add_field(name="ID da sprint", value=sprint["id"], inline=False)
+        sprintEmbed.add_field(name="ID", value=sprint.id, inline=True)
         sprintEmbed.add_field(
-            name="Data de início da sprint",
-            value=getFormattedDate(sprint["startDate"]).split()[0],
-            inline=False,
+            name="Duração", value=f"{sprint.getSprintDuration()} dias", inline=True
         )
         sprintEmbed.add_field(
-            name="Data de término da sprint",
-            value=getFormattedDate(sprint["endDate"]).split()[0],
-            inline=False,
+            name="Iniciado há", value=f"{sprint.getDaysPassed()} dias", inline=True
+        )
+
+        sprintEmbed.add_field(name="", value="", inline=False)
+
+        sprintEmbed.add_field(name="Tasks por categoria", value="", inline=False)
+        for category in tasks_per_category:
+            sprintEmbed.add_field(
+                name=category, value=len(tasks_per_category[category]), inline=True
+            )
+
+        sprintEmbed.add_field(name="", value="", inline=False)
+        sprintEmbed.add_field(name="Status da sprint", value="", inline=False)
+        sprintEmbed.add_field(
+            name="Porcentagem de conclusão",
+            value=f"{conclusionPercentage}%",
+            inline=True,
+        )
+
+        sprintEmbed.add_field(
+            name="Dias restantes",
+            value=f"{sprint.getDaysRemaining()} dias",
+            inline=True,
         )
 
         await message.reply(
