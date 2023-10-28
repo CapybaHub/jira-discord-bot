@@ -11,7 +11,7 @@ from settings import (
     getAvailableCommands,
 )
 
-jiraAPI = JiraManager.Client(JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN)
+jiraAPI = JiraManager.JiraAPIClient(JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN)
 
 client = discord.Client(intents=discord.Intents.all())
 
@@ -21,7 +21,6 @@ availableCommands = getAvailableCommands(MessagesHandler)
 
 from simple_http_server import route, server
     
-
 @route("/")
 def index():
     return {"status": "201"}
@@ -29,12 +28,10 @@ def index():
 
 @client.event
 async def on_ready():
-    jiraAPI.get_projects()
-
     print(f"Logado com sucesso como {client.user}")
 
-    print('SERVER START')
-    server.start(port=80)
+    # print('SERVER START')
+    # server.start(port=80)
 
 
 @client.event
@@ -59,7 +56,6 @@ async def handleReceivedMessage(message):
     possibleCommand = messageContent[0]
 
     for commandPrefix in commandPrefixes:
-        print(possibleCommand, commandPrefix, possibleCommand.startswith(commandPrefix))
         if possibleCommand.startswith(commandPrefix):
             command = possibleCommand[len(commandPrefix) :]
             if command in availableCommands:

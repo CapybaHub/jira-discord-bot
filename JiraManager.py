@@ -3,7 +3,10 @@ from requests.auth import HTTPBasicAuth
 import requests
 import json
 
-class Client:
+from JiraClasses import IssuesList, Sprint
+
+
+class JiraAPIClient:
     """
     Integration with JIRA WebService.
 
@@ -18,17 +21,17 @@ class Client:
         self.user = JIRA_USER_EMAIL
         self.api_token = JIRA_API_TOKEN
         self.project_url = JIRA_PROJECT_URL
-        
+
     def _requestToAgile(self, method, suffix, **kwargs):
         response = requests.request(
             method,
             urljoin(f"{self.project_url}/rest/agile/1.0/", suffix),
             auth=HTTPBasicAuth(self.user, self.api_token),
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
             },
-            **kwargs
+            **kwargs,
         )
         self._handle_api_error(response)
         return response
@@ -38,11 +41,11 @@ class Client:
             method,
             urljoin(f"{self.project_url}/rest/api/3/", suffix),
             auth=HTTPBasicAuth(self.user, self.api_token),
-            headers = {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json",
             },
-            **kwargs
+            **kwargs,
         )
         self._handle_api_error(response)
         return response
@@ -66,46 +69,6 @@ class Client:
         )
         return response.json()
 
-    def get_tasks(self, project):
-        """Listar todas as tasks de um projeto."""
-        response = self._request(
-            "GET",
-            f"project/{project}",
-            params={"include-tasks": "true"},
-        )
-        return response.json()
-
-    def get_task_by_key(self, issueKey):
-        """Listar uma task."""
-        response = self._request(
-            "GET",
-            f"issue/{issueKey}",
-        )
-        return response.json()
-
-    def get_tasks_by_sprint(self, project_key, sprint_id):
-        """Listar todas as tasks de uma sprint"""
-
-        query = {
-            "jql": f"project = {project_key} AND sprint = {sprint_id}",
-            "fields": "summary,customfield_10026",
-        }
-
-        response = self._request(
-            "GET",
-            f"search",
-            params=query,
-        )
-        return response.json()
-    
-    def get_sprints(self, project_key):
-        """Listar todas as sprints de um projeto."""
-        response = self._request(
-            "GET",
-            f"sprint/{project_key}",
-        )
-        return response.json()
-    
     def get_sprint_list(self, boardId):
         """Listar todas sprints."""
         response = self._requestToAgile(
@@ -113,7 +76,7 @@ class Client:
             f"board/{boardId}/sprint",
         )
         return response.json()
-    
+
     def get_project_list(self, boardId):
         """Listar todos projetos."""
         response = self._requestToAgile(
@@ -121,7 +84,7 @@ class Client:
             f"board/{boardId}/project",
         )
         return response.json()
-    
+
     def get_board_list(self):
         """Listar todos projetos."""
         response = self._requestToAgile(
@@ -129,19 +92,19 @@ class Client:
             f"board",
         )
         return response.json()
-        
 
     def get_sprint_data(self, sprint_id):
         """Obter dados de uma sprint."""
-        response = self._request(
+        response = self._requestToAgile(
             "GET",
             f"sprint/{sprint_id}",
         )
-        return response.json()
+        sprint = Sprint(response.json())
+        return sprint
 
     def get_sprint_burndown(self, sprint_id):
         """Obter o relatório de burndown de uma sprint."""
-        response = self._request(
+        response = self._requestToAgile(
             "GET",
             f"sprint/{sprint_id}/burndownData",
         )
@@ -149,14 +112,19 @@ class Client:
 
     def get_tasks_in_sprint(self, sprint_id):
         """Listar todas as tasks de uma sprint."""
-        query = {
-            "jql": f"sprint = {sprint_id}",
-            "fields": "summary,customfield_10026",
-        }
-
-        response = self._request(
+        response = self._requestToAgile(
             "GET",
-            "search",
-            params=query,
+            f"sprint/{sprint_id}/issue",
         )
-        return response.json()
+
+        data = response.json()
+
+        # Create an Issue instance
+        issues = IssuesList(
+            startAt=data["startAt"],
+            maxResults=data["maxResults"],
+            total=data["total"],
+            issues=data["issues"],
+        )
+
+        return issues

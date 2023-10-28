@@ -1,28 +1,69 @@
 import json
 import discord
+from JiraClasses import Sprint
+from JiraManager import JiraAPIClient
+from datetime import datetime
 
-from utils import generateRandomDiscordColor, getProjectUrlFromKey
+from utils import (
+    generateRandomDiscordColor,
+    getFormattedDateAndTimeFromISO,
+    getFormattedDateFromDatetime,
+    getProjectUrlFromKey,
+)
 
 
 async def validateReceivedParamsFromMessage(commandInfo, message):
-    print("validateReceivedParamsFromMessage", message, message.content)
     if len(message.content.split()) != len(commandInfo["params"]) + 1:
-        await message.channel.send(
-            f"Parâmetros inválidos. Exemplo: {commandInfo['example']}"
+        errorMessage = (
+            f"Parâmetros inválidos.\nOs parâmetros esperados são: \n"
+            + "\n".join([f"- {command}" for command in commandInfo["params"]])
+            + f"\nExemplo: {commandInfo['example']}"
         )
-        return False
+        await message.channel.send(errorMessage)
+
+        return Exception(errorMessage)
     return True
+
+
+async def getParamsFromValidMessage(commandInfo, message):
+    isValid = await validateReceivedParamsFromMessage(commandInfo, message)
+
+    if not isValid:
+        return
+
+    params = message.content.split()[1:]
+
+    paramsByName = {}
+
+    for param in commandInfo["params"]:
+        paramsByName[param] = params.pop(0)
+
+    return paramsByName
 
 
 class DiscordMessagesHandler:
     jiraAPI = None
     discordClient = None
 
-    def __init__(self, jiraAPI, discordClient):
+    def __init__(self, jiraAPI: JiraAPIClient, discordClient: discord.Client):
         self.jiraAPI = jiraAPI
         self.discordClient = discordClient
 
-    async def sayHello(self, message):
+    async def _getCurrentSprint(self, board_id):
+        all_sprints = self.jiraAPI.get_sprint_list(board_id)
+
+        currentSprint = None
+        for sprint in all_sprints["values"]:
+            if sprint["state"] == "active":
+                currentSprint = sprint
+                break
+
+        if currentSprint:
+            return Sprint(currentSprint)
+        else:
+            return None
+
+    async def sayHello(self, commandInfo, message):
         await message.channel.send(f"Olá {message.author.mention}!")
 
     async def getIssueInfo(self, commandInfo, message):
@@ -41,20 +82,49 @@ class DiscordMessagesHandler:
         issue = self.jiraAPI.getIssue(issueIdOrKey)
         print(issue)
 
-    async def listProjects(self, commandInfo, message):
-        projects = self.jiraAPI.get_projects()
+    async def getCurrentSprintInfo(self, commandInfo, message: discord.Message):
+        params = await getParamsFromValidMessage(commandInfo, message)
+
+        current_sprint = await self._getCurrentSprint(int(params["id-do-quadro"]))
+
+        sprintInfoEmbed = discord.Embed(
+            title=f"{current_sprint.name}",
+            color=generateRandomDiscordColor(),
+        )
+
+        sprintInfoEmbed.add_field(
+            name="ID da sprint", value=current_sprint.id, inline=False
+        )
+        sprintInfoEmbed.add_field(
+            name="Data de início da sprint",
+            value=getFormattedDateFromDatetime(current_sprint.startDate),
+            inline=False,
+        )
+        sprintInfoEmbed.add_field(
+            name="Data de término da sprint",
+            value=getFormattedDateFromDatetime(current_sprint.endDate),
+            inline=False,
+        )
+
+        await message.reply(
+            content=f"**É claro, aqui está sua sprint atual:**\n \n",
+            embed=sprintInfoEmbed,
+        )
+
+    async def listBoards(self, commandInfo, message):
+        projects = self.jiraAPI.get_board_list()
 
         projectsData = {}
 
         for project in projects["values"]:
-            projectsData[project["key"]] = {
+            projectsData[project["location"]["projectKey"]] = {
                 "name": project["name"],
-                "image": project["avatarUrls"]["48x48"],
-                "key": project["key"],
-                "type": project["projectTypeKey"],
+                "image": project["location"]["avatarURI"],
+                "key": project["location"]["projectKey"],
+                "type": project["type"],
                 "id": project["id"],
-                "isPrivate": project["isPrivate"],
-                "url": project["self"],
+                "id-do-quadro": project["location"]["id-do-quadro"],
+                "projectName": project["location"]["displayName"],
             }
 
         for project in projectsData:
@@ -66,47 +136,124 @@ class DiscordMessagesHandler:
                 color=generateRandomDiscordColor(),
             )
             projectEmbed.set_thumbnail(url=projectsData[project]["image"])
-            projectEmbed.set_image(url=projectsData[project]["image"])
+            # projectEmbed.set_image(url=projectsData[project]["image"])
             projectEmbed.add_field(
-                name="Tipo", value=projectsData[project]["type"], inline=True
+                name="ID do quadro", value=projectsData[project]["id"], inline=False
             )
             projectEmbed.add_field(
-                name="Privacidade",
-                value="Privado" if projectsData[project]["isPrivate"] else "Público",
-                inline=True,
+                name="Chave do quadro", value=projectsData[project]["key"], inline=False
             )
-            projectEmbed.add_field(name="ID", value=projectsData[project]["id"])
+            projectEmbed.add_field(
+                name="Nome do projeto",
+                value=projectsData[project]["projectName"],
+                inline=False,
+            )
 
             projectsData[project]["embed"] = projectEmbed
 
         allEmbeds = [projectsData[project]["embed"] for project in projectsData]
         showEmbeds = allEmbeds[:10]
-        remainingEmbeds = allEmbeds[10:]
 
         await message.reply(
             embeds=showEmbeds,
-            content=f"**É claro, aqui estão seus projetos:** \n\n*Contagem de projetos: {len(projectsData)}* \n \n",
+            # view=View.to_components(self=self),
+            content=f"**É claro, aqui estão seus quadros do Jira:** \n\n*Contagem de projetos: {len(projectsData)}* \n \n",
         )
 
-    async def listTasks(self, commandInfo, message):
-        print(commandInfo)
-        tasks = self.jiraAPI.get_tasks(commandInfo)
-        print(tasks)
+    async def listSprints(self, commandInfo, message: discord.Message):
+        params = await getParamsFromValidMessage(commandInfo, message)
 
-        tasksData = {}
+        sprints = self.jiraAPI.get_sprint_list(params["id-do-quadro"])
 
-    async def listBoards(self, commandInfo, message):
-        print(commandInfo)
-        tasks = self.jiraAPI.get_board_list(commandInfo)
-        print(tasks)
+        sprintEmbeds = []
 
-        tasksData = {}
+        for sprint in sprints["values"]:
+            sprintEmbed = discord.Embed(
+                title=f'{sprint["name"]}',
+                color=generateRandomDiscordColor(),
+            )
 
-    async def listSprints(self, commandInfo, message):
-        print(commandInfo)
-        sprints = self.jiraAPI.get_sprint_list(commandInfo)
-        print(sprints)
+            if sprint["state"] == "active":
+                sprintEmbed.title += " (Sprint atual)"
+
+            sprintEmbed.add_field(name="ID da sprint", value=sprint["id"], inline=False)
+            sprintEmbed.add_field(
+                name="Data de início da sprint",
+                value=getFormattedDateAndTimeFromISO(sprint["startDate"]).split()[0],
+                inline=False,
+            )
+            sprintEmbed.add_field(
+                name="Data de término da sprint",
+                value=getFormattedDateAndTimeFromISO(sprint["endDate"]).split()[0],
+                inline=False,
+            )
+
+            sprintEmbeds.append(sprintEmbed)
 
         await message.reply(
-            content=f"**É claro, aqui estão suas sprints:** \n\n*Contagem de sprints: {len(sprints)}* \n \n",
+            content=f"**É claro, aqui estão suas sprints:** \n\n*Contagem de sprints: {len(sprintEmbeds)}* \n \n",
+            embeds=sprintEmbeds,
+        )
+
+    async def getSprintReport(self, commandInfo, message: discord.Message):
+        params = await getParamsFromValidMessage(commandInfo, message)
+
+        sprint = self.jiraAPI.get_sprint_data(params["id-da-sprint"])
+
+        sprint_tasks = self.jiraAPI.get_tasks_in_sprint(params["id-da-sprint"])
+        # sprint_burndown = self.jiraAPI.get_sprint_burndown(params["id-da-sprint"])
+
+        # print(sprint_burndown)
+
+        tasks_per_category = {}
+
+        for task in sprint_tasks.issues:
+            current_task_category = task.getCurrentStatus()
+            if current_task_category not in tasks_per_category:
+                tasks_per_category[current_task_category] = []
+            tasks_per_category[current_task_category].append(task)
+
+        conclusionPercentage = round(
+            len(tasks_per_category["Concluído"]) / len(sprint_tasks.issues) * 100,
+            2,
+        )
+
+        sprintEmbed = discord.Embed(
+            title=sprint.name,
+            color=generateRandomDiscordColor(),
+        )
+
+        sprintEmbed.add_field(name="ID", value=sprint.id, inline=True)
+        sprintEmbed.add_field(
+            name="Duração", value=f"{sprint.getSprintDuration()} dias", inline=True
+        )
+        sprintEmbed.add_field(
+            name="Iniciado há", value=f"{sprint.getDaysPassed()} dias", inline=True
+        )
+
+        sprintEmbed.add_field(name="", value="", inline=False)
+
+        sprintEmbed.add_field(name="Tasks por categoria", value="", inline=False)
+        for category in tasks_per_category:
+            sprintEmbed.add_field(
+                name=category, value=len(tasks_per_category[category]), inline=True
+            )
+
+        sprintEmbed.add_field(name="", value="", inline=False)
+        sprintEmbed.add_field(name="Status da sprint", value="", inline=False)
+        sprintEmbed.add_field(
+            name="Porcentagem de conclusão",
+            value=f"{conclusionPercentage}%",
+            inline=True,
+        )
+
+        sprintEmbed.add_field(
+            name="Dias restantes",
+            value=f"{sprint.getDaysRemaining()} dias",
+            inline=True,
+        )
+
+        await message.reply(
+            content=f"**É claro, aqui está seu relatório de sprint:** \n \n",
+            embed=sprintEmbed,
         )
