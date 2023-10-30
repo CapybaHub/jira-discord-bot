@@ -1,8 +1,8 @@
-import json
 import discord
 from JiraClasses import Sprint
 from JiraManager import JiraAPIClient
-from datetime import datetime
+
+from settings import availableCommands, commandPrefixes
 
 from utils import (
     generateRandomDiscordColor,
@@ -10,7 +10,6 @@ from utils import (
     getFormattedDateFromDatetime,
     getProjectUrlFromKey,
 )
-
 
 async def validateReceivedParamsFromMessage(commandInfo, message):
     if len(message.content.split()) != len(commandInfo["params"]) + 1:
@@ -62,12 +61,40 @@ class DiscordMessagesHandler:
             return Sprint(currentSprint)
         else:
             return None
+        
+    async def listAvailableCommands(self, commandInfo, message):        
+        commandsEmbed = discord.Embed(
+            title="Comandos disponíveis",
+            color=generateRandomDiscordColor(),
+        )
+
+        for command in availableCommands:
+            if "aliases" in availableCommands[command]:
+                aliasesListWithPrefix = [
+                    f"{commandPrefixes[0]}{alias}"
+                    for alias in availableCommands[command]["aliases"]
+                    if availableCommands[command]["aliases"]
+                ]
+            else:
+                aliasesListWithPrefix = []    
+            
+            commandAliases = f"Atalhos: {', '.join(aliasesListWithPrefix)}\n" if aliasesListWithPrefix else "" 
+            commandExamples = f"*Exemplo:* {availableCommands[command]['example']}\n" if "example" in availableCommands[command] else ""
+            commandsEmbed.add_field(
+                name=f"**{commandPrefixes[0]}{command}**",
+                value=f"{availableCommands[command]['description']}\n\n{commandAliases}{commandExamples}",
+                inline=False,
+            )
+
+        await message.reply(
+            embed=commandsEmbed,
+            content=f"**É claro, aqui estão seus comandos disponíveis:** \n \n",
+        )
 
     async def sayHello(self, commandInfo, message):
         await message.channel.send(f"Olá {message.author.mention}!")
 
     async def getIssueInfo(self, commandInfo, message):
-        # print(message, message.content, commandInfo)
         isValid = await validateReceivedParamsFromMessage(commandInfo, message)
 
         if not isValid:
@@ -135,8 +162,6 @@ class DiscordMessagesHandler:
                 ),
                 color=generateRandomDiscordColor(),
             )
-            projectEmbed.set_thumbnail(url=projectsData[project]["image"])
-            # projectEmbed.set_image(url=projectsData[project]["image"])
             projectEmbed.add_field(
                 name="ID do quadro", value=projectsData[project]["id"], inline=False
             )
@@ -156,7 +181,6 @@ class DiscordMessagesHandler:
 
         await message.reply(
             embeds=showEmbeds,
-            # view=View.to_components(self=self),
             content=f"**É claro, aqui estão seus quadros do Jira:** \n\n*Contagem de projetos: {len(projectsData)}* \n \n",
         )
 
@@ -201,9 +225,6 @@ class DiscordMessagesHandler:
         sprint = self.jiraAPI.get_sprint_data(params["id-da-sprint"])
 
         sprint_tasks = self.jiraAPI.get_tasks_in_sprint(params["id-da-sprint"])
-        # sprint_burndown = self.jiraAPI.get_sprint_burndown(params["id-da-sprint"])
-
-        # print(sprint_burndown)
 
         tasks_per_category = {}
 
