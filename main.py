@@ -1,23 +1,23 @@
 import discord
-from DiscordMessagesHandler import DiscordMessagesHandler
 import traceback
-import JiraManager
+from DiscordMessagesHandler import DiscordMessagesHandler
+from JiraManager import JiraAPIClient
 from settings import (
     DISCORD_API_TOKEN,
     JIRA_API_TOKEN,
     JIRA_PROJECT_URL,
     JIRA_USER_EMAIL,
     commandPrefixes,
-    getAvailableCommands,
 )
+from CommandsManager import getBOTCommands
 
-jiraAPI = JiraManager.JiraAPIClient(JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN)
+jiraAPI = JiraAPIClient(JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN)
 
 client = discord.Client(intents=discord.Intents.all())
 
 MessagesHandler = DiscordMessagesHandler(jiraAPI=jiraAPI, discordClient=client)
 
-availableCommands = getAvailableCommands(MessagesHandler)
+availableCommands = getBOTCommands(MessagesHandler)
 
 from simple_http_server import route, server
     

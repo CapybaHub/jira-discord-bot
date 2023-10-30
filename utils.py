@@ -3,7 +3,6 @@ import random
 
 datetimeFormat = "%d/%m/%Y %H:%M:%S"
 
-
 def generateRandomDiscordColor():
     return random.randint(0, 0xFFFFFF)
 
