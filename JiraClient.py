@@ -1,8 +1,10 @@
 from urllib.parse import urljoin
 from requests.auth import HTTPBasicAuth
 import requests
+from typing import List
 
-from JiraClasses import IssueDetails, Sprint
+from JiraClasses import Board, Issue, Sprint
+from settings import JIRA_API_TOKEN, JIRA_PROJECT_URL, JIRA_USER_EMAIL
 
 class JiraAPIClient:
     """
@@ -44,23 +46,28 @@ class JiraAPIClient:
         if not is_json or not response.ok:
             raise Exception(response)
 
-    def get_sprint_list(self, boardId):
-        """Listar todas sprints."""
-        response = self._request(
-            "GET",
-            f"board/{boardId}/sprint",
-        )
-        return response.json()
-
-    def get_board_list(self):
+    def get_all_boards(self):
         """Listar todos quadros."""
         response = self._request(
             "GET",
             f"board",
         )
-        return response.json()
+        
+        boardsList = [Board(board) for board in response.json()["values"]]
+        return boardsList
+    
+    def get_sprints_from_board(self, boardId):
+        """Listar todas sprints."""
+        response = self._request(
+            "GET",
+            f"board/{boardId}/sprint",
+        )
+        jsonResponse = response.json()
 
-    def get_sprint_data(self, sprint_id):
+        sprintsList = [Sprint(sprint)for sprint in jsonResponse["values"]]
+        return sprintsList
+
+    def get_sprint_data_by_id(self, sprint_id):
         """Obter dados de uma sprint."""
         response = self._request(
             "GET",
@@ -77,7 +84,25 @@ class JiraAPIClient:
         )
 
         data = response.json()
+        
+        issuesJSONList = list(data.get("issues"))
 
-        issues = [IssueDetails(issue) for issue in issues]
-
+        issues: List[Issue]= []
+        
+        for issue in issuesJSONList:
+            issues.append(Issue(issue))
+        
         return issues
+    
+    def get_current_sprint(self, board_id):
+        all_sprints = self.get_sprints_from_board(board_id)
+        currentSprint = None
+        for sprint in all_sprints:
+            if sprint.state == "active":
+                currentSprint = sprint
+                break
+
+        if currentSprint:
+            return currentSprint
+        else:
+            return None

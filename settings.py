@@ -1,57 +1,31 @@
 import os
+from os.path import exists
 from dotenv import load_dotenv
+import pickle
 
 # Load .env file
 load_dotenv()
 
-
-DISCORD_API_TOKEN = str(os.getenv("DISCORD_API_TOKEN"))
 JIRA_PROJECT_URL = str(os.getenv("JIRA_PROJECT_URL"))
 JIRA_USER_EMAIL = str(os.getenv("JIRA_USER_EMAIL"))
 JIRA_API_TOKEN = str(os.getenv("JIRA_API_TOKEN"))
+DISCORD_API_TOKEN = str(os.getenv("DISCORD_API_TOKEN"))
 
-commandPrefixes = ["!"]
+commandPrefix = "!"
 
-availableCommands =  {
-        "commands": {
-            "description": "Lista os comandos disponíveis",
-            "params": [],
-            "example": "!commands",
-            "aliases": ["comandos", "ajuda"],
-        },
-        "oi": {
-            "description": "Saudação",
-            "params": [],
-            "example": "!oi",
-        },
-        "issue": {
-            "description": "Busca uma task no Jira",
-            "params": ["task-key"],
-            "example": "!issue PROJ-123",
-            "aliases": ["i", "t", "task"],
-        },
-        "boards": {
-            "description": "Lista os quadros da conta",
-            "params": [],
-            "example": "!boards",
-            "aliases": ["projects", "quadros"],
-        },
-        "sprints": {
-            "description": "Lista as sprints de um quadro",
-            "params": ["id-do-quadro"],
-            "example": "!sprints 2",
-            "aliases": ["s"],
-        },
-        "current-sprint": {
-            "description": "Busca informações da sprint atual de um projeto",
-            "params": ["id-do-quadro"],
-            "example": "!current-sprint 2",
-            "aliases": ["sprint-atual", "sa"],
-        },
-        "sprint-report": {
-            "description": "Busca informações de uma sprint",
-            "params": ["id-da-sprint"],
-            "example": "!sprint 2",
-            "aliases": ["sprint", "sr"],
-        },
-}
+# Funções utilitárias para utilizar o Pickle
+def load_pickle(default, filename):
+    # Caso o arquivo existir, retorna o objeto dentro dele
+    if exists(f"{filename}.pickle"):
+        with open(f"{filename}.pickle", "rb") as f:
+            return pickle.load(f)
+    # Caso contrário, cria o arquivo e retorna o valor padrão para esta variável
+    else:
+        with open(f"{filename}.pickle", "wb") as f:
+            pickle.dump(default, f)
+            return default
+
+
+def save_pickle(obj, filename):
+    with open(f"./{filename}.pickle", "wb") as f:
+        pickle.dump(obj, f)
