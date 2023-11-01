@@ -104,10 +104,8 @@ class DiscordMessagesHandler:
         functionParams = {
             key for key in commandInfo["params"] for param in params.pop(0)
         }
-        print(functionParams)
         issueIdOrKey = message.content.split()[1]
         issue = self.jiraAPI.getIssue(issueIdOrKey)
-        print(issue)
 
     async def getCurrentSprintInfo(self, commandInfo, message: discord.Message):
         params = await getParamsFromValidMessage(commandInfo, message)
