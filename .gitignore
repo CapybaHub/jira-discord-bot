@@ -5,3 +5,6 @@ venv/*
 # Cache
 __pycache__/**
 *.pyc
+
+#log
+discord.log
