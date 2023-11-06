@@ -1,10 +1,19 @@
 # Env
 .env
-venv/*
+*/venv/**
+venv/**
 
 # Cache
 __pycache__/**
+**/__pycache__/**
 *.pyc
+
+# Pickle
+*.pickle
+
+# VSCode
+.vscode/settings.json
+.vscode/**
 
 #log
 discord.log
