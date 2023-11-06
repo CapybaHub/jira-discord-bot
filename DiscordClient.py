@@ -3,6 +3,8 @@ from discord.ext import commands
 from utils import generateRandomDiscordColor
 from settings import commandPrefix
 
+from simple_http_server import server
+    
 DiscordClient = commands.Bot(
     intents=discord.Intents.all(), command_prefix=commandPrefix
 )
@@ -11,6 +13,7 @@ DiscordClient = commands.Bot(
 @DiscordClient.event
 async def on_ready():
     print(f"Logado com sucesso como {DiscordClient.user}")
+    await server.start_async(prefer_coroutine=True, port=8000)
 
 
 @DiscordClient.event
@@ -60,3 +63,4 @@ async def commands(context):
         commandsEmbed.add_field(name=command.name, value=help, inline=False)
 
     await context.send(embed=commandsEmbed)
+

@@ -14,3 +14,6 @@ __pycache__/**
 # VSCode
 .vscode/settings.json
 .vscode/**
+
+#log
+discord.log

@@ -8,12 +8,12 @@ from utils import (
     generateRandomDiscordColor,
 )
 
+
 JiraClient = JiraAPIClient(
     JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN
 )
 
 user_selected_board = load_pickle({}, "user_selected_board")
-
 
 async def getCurrentBoardID(message: discord.Message):
     currentBoard = (

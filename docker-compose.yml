@@ -1,0 +1,15 @@
+version: '3'
+services:
+  python:
+    build: 
+      context: .
+      args:
+        requirements_file: requirements.txt
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      - 8000:8000
+    command: python3 main.py
