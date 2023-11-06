@@ -12,4 +12,4 @@ services:
     working_dir: /app
     ports:
       - 80:80
-    command: python main.py
+    command: python3 main.py

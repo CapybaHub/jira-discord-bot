@@ -1,48 +1,31 @@
+import os
+from os.path import exists
 from dotenv import load_dotenv
+import pickle
 
 # Load .env file
 load_dotenv()
-
-import os
 
 JIRA_PROJECT_URL = str(os.getenv("JIRA_PROJECT_URL"))
 JIRA_USER_EMAIL = str(os.getenv("JIRA_USER_EMAIL"))
 JIRA_API_TOKEN = str(os.getenv("JIRA_API_TOKEN"))
 DISCORD_API_TOKEN = str(os.getenv("DISCORD_API_TOKEN"))
 
-commandPrefixes = ["!"]
+commandPrefix = "!"
+
+# Funções utilitárias para utilizar o Pickle
+def load_pickle(default, filename):
+    # Caso o arquivo existir, retorna o objeto dentro dele
+    if exists(f"{filename}.pickle"):
+        with open(f"{filename}.pickle", "rb") as f:
+            return pickle.load(f)
+    # Caso contrário, cria o arquivo e retorna o valor padrão para esta variável
+    else:
+        with open(f"{filename}.pickle", "wb") as f:
+            pickle.dump(default, f)
+            return default
 
 
-def getAvailableCommands(MessageHandler):
-    return {
-        "oi": {
-            "description": "Saudação",
-            "params": [],
-            "example": "!oi",
-            "function": MessageHandler.sayHello,
-        },
-        "issue": {
-            "description": "Busca uma issue no Jira",
-            "params": ["issueIdOrKey"],
-            "example": "!issue PROJ-123",
-            "function": MessageHandler.getIssueInfo,
-        },
-        "projects": {
-            "description": "Lista os projetos da conta",
-            "params": [],
-            "example": "!projects",
-            "function": MessageHandler.listProjects,
-        },
-        "tasks": {
-            "description": "Lista as tasks de um projeto",
-            "params": ["projectKey"],
-            "example": "!tasks PROJ",
-            "function": MessageHandler.listTasks,
-        },
-        "sprints": {
-            "description": "Lista as tasks de um projeto",
-            "params": ["projectID"],
-            "example": "!sprints 2",
-            "function": MessageHandler.listSprints,
-        },
-    }
+def save_pickle(obj, filename):
+    with open(f"./{filename}.pickle", "wb") as f:
+        pickle.dump(obj, f)
