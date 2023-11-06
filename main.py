@@ -7,10 +7,8 @@ from utils import (
     getProjectUrlFromKey,
     generateRandomDiscordColor,
 )
-import logging
 from simple_http_server import server
 
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 
 JiraClient = JiraAPIClient(
     JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN
@@ -197,5 +195,5 @@ async def report(message: discord.Message):
         embed=sprintEmbed,
     )
 
-DiscordClient.run(DISCORD_API_TOKEN, log_handler=handler)
+DiscordClient.run(DISCORD_API_TOKEN)
 server.stop()
