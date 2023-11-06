@@ -7,6 +7,7 @@ from utils import (
     getProjectUrlFromKey,
     generateRandomDiscordColor,
 )
+from simple_http_server import server
 
 
 JiraClient = JiraAPIClient(
@@ -195,3 +196,4 @@ async def report(message: discord.Message):
     )
 
 DiscordClient.run(DISCORD_API_TOKEN)
+server.stop()
