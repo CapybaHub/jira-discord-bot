@@ -8,6 +8,7 @@ from utils import (
     generateRandomDiscordColor,
 )
 import logging
+from simple_http_server import server
 
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 
@@ -197,3 +198,4 @@ async def report(message: discord.Message):
     )
 
 DiscordClient.run(DISCORD_API_TOKEN, log_handler=handler)
+server.stop()
