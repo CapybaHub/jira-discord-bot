@@ -3,6 +3,13 @@ from discord.ext import commands
 from utils import generateRandomDiscordColor
 from settings import commandPrefix
 
+from simple_http_server import route, server
+
+@route("/")
+def index():
+    return {"status": "201"}
+
+
 DiscordClient = commands.Bot(
     intents=discord.Intents.all(), command_prefix=commandPrefix
 )
@@ -10,6 +17,7 @@ DiscordClient = commands.Bot(
 
 @DiscordClient.event
 async def on_ready():
+    server.start(port=8000)
     print(f"Logado com sucesso como {DiscordClient.user}")
 
 
