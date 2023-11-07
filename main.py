@@ -165,15 +165,15 @@ async def report(message: discord.Message):
         name="Duração", value=f"{sprint.getSprintDuration()} dias", inline=True
     )
     sprintEmbed.add_field(
-        name="Iniciado há", value=f"{sprint.getDaysPassed()} dias", inline=True
+        name="Iniciada há", value=f"{abs(sprint.getDaysPassed())} dias", inline=True
     )
 
     sprintEmbed.add_field(name="", value="", inline=False)
 
     sprintEmbed.add_field(name="Tasks por categoria", value="", inline=False)
     for category in tasks_per_category:
-        sprintEmbed.add_field(
-            name=category, value=len(tasks_per_category[category]), inline=True
+        sprintEmbed.insert_field_at(
+            5, name=category, value=len(tasks_per_category[category]), inline=True
         )
 
     sprintEmbed.add_field(name="", value="", inline=False)
