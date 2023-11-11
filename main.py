@@ -145,9 +145,7 @@ async def report(message: discord.Message):
     if currentBoardID == None:
         return
 
-    print(currentBoardID)
     sprint = JiraClient.get_current_sprint(currentBoardID)
-    print(sprint)
 
     sprint_tasks = JiraClient.get_tasks_in_sprint(sprint.id)
 
@@ -159,15 +157,16 @@ async def report(message: discord.Message):
             tasks_per_category[current_task_category] = []
         tasks_per_category[current_task_category].append(task)
 
-    doneCategoryName = "Concluído" if "Concluído" in tasks_per_category else "Done"
-    tasksList = (
-        tasks_per_category[doneCategoryName]
-        if doneCategoryName in tasks_per_category
-        else []
-    )
+    doneCategoryNames = ["Concluído", "Done", "Validated"]
+
+    doneTasksList = []
+    
+    for doneCategoryName in doneCategoryNames:
+        if doneCategoryName in tasks_per_category:
+            doneTasksList.extend(tasks_per_category[doneCategoryName])
 
     conclusionPercentage = round(
-        len(tasksList) / len(sprint_tasks) * 100,
+        len(doneTasksList) / len(sprint_tasks) * 100,
         2,
     )
 
@@ -186,7 +185,7 @@ async def report(message: discord.Message):
 
     sprintEmbed.add_field(name="", value="", inline=False)
 
-    sprintEmbed.add_field(name="Tasks por categoria", value="", inline=False)
+    sprintEmbed.add_field(name=f"Tasks por categoria (total: {len(sprint_tasks)})", value="", inline=False)
     for category in tasks_per_category:
         sprintEmbed.insert_field_at(
             5, name=category, value=len(tasks_per_category[category]), inline=True
@@ -196,7 +195,7 @@ async def report(message: discord.Message):
     sprintEmbed.add_field(name="Status da sprint", value="", inline=False)
     sprintEmbed.add_field(
         name="Porcentagem de conclusão",
-        value=f"{conclusionPercentage}%",
+        value=f"{conclusionPercentage}% - {len(doneTasksList)} tasks",
         inline=True,
     )
 

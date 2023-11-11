@@ -16,7 +16,6 @@ class Issue:
 
 class Sprint:
     def __init__(self, sprint_data):
-        print(sprint_data)
         self.id = sprint_data.get("id")
         self.self = sprint_data.get("self")
         self.state = sprint_data.get("state")
