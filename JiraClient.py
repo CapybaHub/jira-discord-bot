@@ -6,6 +6,7 @@ from typing import List
 from JiraClasses import Board, Issue, Sprint
 from settings import JIRA_API_TOKEN, JIRA_PROJECT_URL, JIRA_USER_EMAIL
 
+
 class JiraAPIClient:
     """
     Integration with JIRA WebService.
@@ -52,10 +53,10 @@ class JiraAPIClient:
             "GET",
             f"board",
         )
-        
+
         boardsList = [Board(board) for board in response.json()["values"]]
         return boardsList
-    
+
     def get_sprints_from_board(self, boardId):
         """Listar todas sprints."""
         response = self._request(
@@ -64,7 +65,7 @@ class JiraAPIClient:
         )
         jsonResponse = response.json()
 
-        sprintsList = [Sprint(sprint)for sprint in jsonResponse["values"]]
+        sprintsList = [Sprint(sprint) for sprint in jsonResponse["values"]]
         return sprintsList
 
     def get_sprint_data_by_id(self, sprint_id):
@@ -84,16 +85,16 @@ class JiraAPIClient:
         )
 
         data = response.json()
-        
+
         issuesJSONList = list(data.get("issues"))
 
-        issues: List[Issue]= []
-        
+        issues: List[Issue] = []
+
         for issue in issuesJSONList:
             issues.append(Issue(issue))
-        
+
         return issues
-    
+
     def get_current_sprint(self, board_id):
         all_sprints = self.get_sprints_from_board(board_id)
         currentSprint = None

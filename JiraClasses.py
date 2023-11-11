@@ -9,21 +9,34 @@ class Issue:
         self.id = issue_data.get("id")
         self.self = issue_data.get("self")
         self.key = issue_data.get("key")
-        
+
         fields = issue_data.get("fields")
         self.status = fields.get("status").get("name")
 
+
 class Sprint:
     def __init__(self, sprint_data):
+        print(sprint_data)
         self.id = sprint_data.get("id")
         self.self = sprint_data.get("self")
         self.state = sprint_data.get("state")
         self.name = sprint_data.get("name")
-        self.startDate = getDatetimeFromIsoFormatWithZ(sprint_data.get("startDate"))
-        self.endDate = getDatetimeFromIsoFormatWithZ(sprint_data.get("endDate"))
         self.createdDate = sprint_data.get("createdDate")
         self.originBoardId = sprint_data.get("originBoardId")
         self.goal = sprint_data.get("goal")
+        
+        sprintStartDate = sprint_data.get("startDate")
+        sprintEndDate = sprint_data.get("endDate")
+        self.startDate = (
+            getDatetimeFromIsoFormatWithZ(sprint_data.get("startDate"))
+            if sprintStartDate
+            else None
+        )
+        self.endDate = (
+            getDatetimeFromIsoFormatWithZ(sprint_data.get("endDate"))
+            if sprintEndDate
+            else None
+        )
 
     def getSprintDuration(self):
         return getDuration(self.startDate, self.endDate, "days")
@@ -34,13 +47,15 @@ class Sprint:
     def getDaysRemaining(self):
         return getDuration(datetime.now(), self.endDate, "days")
 
+
 class Board:
     embed: discord.Embed = None
+
     def __init__(self, project_data):
         self.self = project_data.get("self")
         self.id = project_data.get("id")
         self.name = project_data.get("name")
-        location =  project_data.get("location")
+        location = project_data.get("location")
         self.key = location.get("projectKey")
         self.fullName = location.get("displayName")
         self.image = location.get("avatarURI")

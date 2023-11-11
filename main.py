@@ -1,7 +1,14 @@
 import discord
 from DiscordClient import DiscordClient
 from JiraClient import JiraAPIClient
-from settings import DISCORD_API_TOKEN, JIRA_API_TOKEN, JIRA_PROJECT_URL, JIRA_USER_EMAIL, load_pickle, save_pickle
+from settings import (
+    DISCORD_API_TOKEN,
+    JIRA_API_TOKEN,
+    JIRA_PROJECT_URL,
+    JIRA_USER_EMAIL,
+    load_pickle,
+    save_pickle,
+)
 from utils import (
     getFormattedDateFromDatetime,
     getProjectUrlFromKey,
@@ -10,20 +17,19 @@ from utils import (
 from simple_http_server import server
 
 
-JiraClient = JiraAPIClient(
-    JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN
-)
+JiraClient = JiraAPIClient(JIRA_PROJECT_URL, JIRA_USER_EMAIL, JIRA_API_TOKEN)
 
 user_selected_board = load_pickle({}, "user_selected_board")
 
-async def getCurrentBoardID(message: discord.Message):
+
+async def getCurrentBoardID(message: discord.Message, ignoreResponse=False):
     currentBoard = (
         user_selected_board[message.author.id]
         if message.author.id in user_selected_board
         else None
     )
 
-    if not currentBoard:
+    if not ignoreResponse and not currentBoard:
         await message.reply(
             "Ei, você ainda não selecionou um quadro! Para selecionar um quadro, digite: `!selectBoard <ID do quadro>`"
         )
@@ -50,7 +56,7 @@ async def boards(message: discord.Message):
     allEmbeds = [project.embed for project in boards]
     showEmbeds = allEmbeds[:10]  # Somente é possível retornar 10 embeds por vez
 
-    currentBoardID = await getCurrentBoardID(message)
+    currentBoardID = await getCurrentBoardID(message, True)
 
     currentBoardText = (
         f"*Atualmente o quadro selecionado é o de ID:* `{currentBoardID}` \n \n"
@@ -81,6 +87,7 @@ async def selectBoard(message: discord.Message, *boardIDS):
         await message.reply(
             f"Ei, o ID {boardID} não corresponde a nenhum quadro do seu Jira!"
         )
+        return
 
     user_selected_board[message.author.id] = boardID
     save_pickle(user_selected_board, "user_selected_board")
@@ -94,7 +101,9 @@ async def currentBoard(message: discord.Message):
     if currentBoardID == None:
         return
 
-    await message.reply(f"O quadro selecionado atualmente é o de ID: `{currentBoardID}`")
+    await message.reply(
+        f"O quadro selecionado atualmente é o de ID: `{currentBoardID}`"
+    )
 
 
 @DiscordClient.command()
@@ -128,6 +137,7 @@ async def currentSprint(message: discord.Message):
         embed=sprintInfoEmbed,
     )
 
+
 @DiscordClient.command()
 async def report(message: discord.Message):
     currentBoardID = await getCurrentBoardID(message)
@@ -135,7 +145,9 @@ async def report(message: discord.Message):
     if currentBoardID == None:
         return
 
+    print(currentBoardID)
     sprint = JiraClient.get_current_sprint(currentBoardID)
+    print(sprint)
 
     sprint_tasks = JiraClient.get_tasks_in_sprint(sprint.id)
 
@@ -146,10 +158,14 @@ async def report(message: discord.Message):
         if current_task_category not in tasks_per_category:
             tasks_per_category[current_task_category] = []
         tasks_per_category[current_task_category].append(task)
-                
+
     doneCategoryName = "Concluído" if "Concluído" in tasks_per_category else "Done"
-    tasksList = tasks_per_category[doneCategoryName] if doneCategoryName in tasks_per_category else []
-    
+    tasksList = (
+        tasks_per_category[doneCategoryName]
+        if doneCategoryName in tasks_per_category
+        else []
+    )
+
     conclusionPercentage = round(
         len(tasksList) / len(sprint_tasks) * 100,
         2,
@@ -194,6 +210,7 @@ async def report(message: discord.Message):
         content=f"**É claro, aqui está seu relatório de sprint:** \n \n",
         embed=sprintEmbed,
     )
+
 
 DiscordClient.run(DISCORD_API_TOKEN)
 server.stop()
