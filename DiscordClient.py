@@ -13,7 +13,7 @@ DiscordClient = commands.Bot(
 @DiscordClient.event
 async def on_ready():
     print(f"Logado com sucesso como {DiscordClient.user}")
-    await server.start_async(prefer_coroutine=True, port=8000)
+    # await server.start_async(prefer_coroutine=True, port=8000)
 
 
 @DiscordClient.event
