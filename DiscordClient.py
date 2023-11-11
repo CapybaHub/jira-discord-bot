@@ -1,10 +1,10 @@
 import discord
 from discord.ext import commands
 from utils import generateRandomDiscordColor
-from settings import commandPrefix
+from settings import ALLOWED_CHANNEL_IDS, commandPrefix
 
 from simple_http_server import server
-    
+
 DiscordClient = commands.Bot(
     intents=discord.Intents.all(), command_prefix=commandPrefix
 )
@@ -17,9 +17,16 @@ async def on_ready():
 
 
 @DiscordClient.event
-async def on_message(message):
+async def on_message(message: discord.Message):
     if message.author == DiscordClient.user:
         return
+    
+    if ALLOWED_CHANNEL_IDS[0] != 'None' and not str(message.channel.id) in ALLOWED_CHANNEL_IDS:
+        print(f'Mensagem recebida em um canal não autorizado. Servidor: {message.guild.name} | Canal: {message.channel.name}')
+        return
+    else:
+        print(f'Mensagem válida. Servidor: {message.guild.name} | Canal: {message.channel.name}')
+        
 
     await DiscordClient.process_commands(message)
 
@@ -51,16 +58,19 @@ async def commands(context):
         title="Comandos disponíveis",
         color=generateRandomDiscordColor(),
     )
-    
+
     allCommands = list(DiscordClient.commands)
 
     for command in allCommands:
         if command.name == "help":
             continue
-        
-        help = command.help if "help" in command.__dict__  and  command.help is not None else "Sem exemplo."
-            
+
+        help = (
+            command.help
+            if "help" in command.__dict__ and command.help is not None
+            else "Sem exemplo."
+        )
+
         commandsEmbed.add_field(name=command.name, value=help, inline=False)
 
     await context.send(embed=commandsEmbed)
-

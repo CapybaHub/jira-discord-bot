@@ -10,6 +10,7 @@ JIRA_PROJECT_URL = str(os.getenv("JIRA_PROJECT_URL"))
 JIRA_USER_EMAIL = str(os.getenv("JIRA_USER_EMAIL"))
 JIRA_API_TOKEN = str(os.getenv("JIRA_API_TOKEN"))
 DISCORD_API_TOKEN = str(os.getenv("DISCORD_API_TOKEN"))
+ALLOWED_CHANNEL_IDS = str(os.getenv("ALLOWED_CHANNEL_IDS")).split(',')
 
 commandPrefix = "!"
 
