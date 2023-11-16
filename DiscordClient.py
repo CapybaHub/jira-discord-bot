@@ -6,13 +6,19 @@ from settings import ALLOWED_CHANNEL_IDS, commandPrefix
 from simple_http_server import server
 
 DiscordClient = commands.Bot(
-    intents=discord.Intents.all(), command_prefix=commandPrefix
+    intents=discord.Intents.all(),
+    command_prefix=commandPrefix,
+    activity=discord.Activity(
+        type=discord.ActivityType.watching, name=f"a evolução do seu projeto."
+    ),
 )
 
 
 @DiscordClient.event
 async def on_ready():
     print(f"Logado com sucesso como {DiscordClient.user}")
+    print(f"Estamos participando de {len(DiscordClient.guilds)} servidores")
+
     await server.start_async(prefer_coroutine=True, port=8000)
 
 
@@ -20,13 +26,19 @@ async def on_ready():
 async def on_message(message: discord.Message):
     if message.author == DiscordClient.user:
         return
-    
-    if ALLOWED_CHANNEL_IDS[0] != 'None' and not str(message.channel.id) in ALLOWED_CHANNEL_IDS:
-        print(f'Mensagem recebida em um canal não autorizado. Servidor: {message.guild.name} | Canal: {message.channel.name}')
+
+    if (
+        ALLOWED_CHANNEL_IDS[0] != "None"
+        and not str(message.channel.id) in ALLOWED_CHANNEL_IDS
+    ):
+        print(
+            f"Mensagem recebida em um canal não autorizado. Servidor: {message.guild.name} | Canal: {message.channel.name}"
+        )
         return
     else:
-        print(f'Mensagem válida. Servidor: {message.guild.name} | Canal: {message.channel.name}')
-        
+        print(
+            f"Mensagem válida. Servidor: {message.guild.name} | Canal: {message.channel.name}"
+        )
 
     await DiscordClient.process_commands(message)
 
@@ -34,6 +46,11 @@ async def on_message(message: discord.Message):
 @DiscordClient.command()
 async def oi(context):  # Sem receber nenhum parâmetro
     await context.reply(f"Olá {context.author.mention}! 👋")
+
+
+@DiscordClient.command()
+async def teste(context):
+    await context.reply("O bot está rodando.")
 
 
 @DiscordClient.command()
