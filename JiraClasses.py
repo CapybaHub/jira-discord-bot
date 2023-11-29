@@ -1,8 +1,10 @@
 from datetime import datetime
+import json
 
 import discord
 
 from utils import getDatetimeFromIsoFormatWithZ, getDuration
+
 
 class Issue:
     def __init__(self, issue_data):
@@ -12,6 +14,12 @@ class Issue:
 
         fields = issue_data.get("fields")
         self.status = fields.get("status").get("name")
+        self.type = fields.get("issuetype").get("name")
+        self.created_at = fields.get("created")
+        self.updated_at = fields.get("updated")
+        
+    def isHistory(self):
+        return self.type == 'História' 
 
 
 class Sprint:
@@ -23,7 +31,7 @@ class Sprint:
         self.createdDate = sprint_data.get("createdDate")
         self.originBoardId = sprint_data.get("originBoardId")
         self.goal = sprint_data.get("goal")
-        
+
         sprintStartDate = sprint_data.get("startDate")
         sprintEndDate = sprint_data.get("endDate")
         self.startDate = (

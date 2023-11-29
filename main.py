@@ -149,24 +149,35 @@ async def report(message: discord.Message):
 
     sprint_tasks = JiraClient.get_tasks_in_sprint(sprint.id)
 
+    tasks_without_histories = [task for task in sprint_tasks if not task.isHistory()]
+
+    just_histories = [task for task in sprint_tasks if task.isHistory()]
+
     tasks_per_category = {}
 
-    for task in sprint_tasks:
+    for task in tasks_without_histories:
         current_task_category = task.status
         if current_task_category not in tasks_per_category:
             tasks_per_category[current_task_category] = []
         tasks_per_category[current_task_category].append(task)
 
-    doneCategoryNames = ["Concluído", "Done", "Validated"]
+    doneCategoryNames = [
+        "Concluído",
+        "Done",
+        "Validated",
+        "Concluido",
+        "Fechada",
+        "Fechado",
+    ]
 
     doneTasksList = []
-    
+
     for doneCategoryName in doneCategoryNames:
         if doneCategoryName in tasks_per_category:
             doneTasksList.extend(tasks_per_category[doneCategoryName])
 
     conclusionPercentage = round(
-        len(doneTasksList) / len(sprint_tasks) * 100,
+        len(doneTasksList) / len(tasks_without_histories) * 100,
         2,
     )
 
@@ -185,7 +196,11 @@ async def report(message: discord.Message):
 
     sprintEmbed.add_field(name="", value="", inline=False)
 
-    sprintEmbed.add_field(name=f"Tasks por categoria (total: {len(sprint_tasks)})", value="", inline=False)
+    sprintEmbed.add_field(
+        name=f"Tasks por categoria (total: {len(tasks_without_histories)})",
+        value="",
+        inline=False,
+    )
     for category in tasks_per_category:
         sprintEmbed.insert_field_at(
             5, name=category, value=len(tasks_per_category[category]), inline=True
@@ -203,6 +218,10 @@ async def report(message: discord.Message):
         name="Dias restantes",
         value=f"{sprint.getDaysRemaining()} dias",
         inline=True,
+    )
+
+    sprintEmbed.add_field(
+        name=f"Histórias na sprint", value=len(just_histories), inline=True
     )
 
     await message.reply(
